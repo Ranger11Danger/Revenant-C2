@@ -3,7 +3,7 @@ C2 framework written in python3 and a linux implant written in Rust
 
 # Installation
 ## Python Packages
-`pip3 install rich cmd2`
+`pip3 install rich cmd2 pycryptodome`
 
 ## Make sure you have rust installed to compile the implant
 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
